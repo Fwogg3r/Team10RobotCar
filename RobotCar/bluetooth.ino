@@ -2,8 +2,8 @@
 
 #define BLUETOOTH_BAUD_RATE 9600
 
-#define Rx 52   //sets transmit pin on the bluetooth to the Rx pin on the arduino
-#define Tx 51  //sets recieve pin on the bluetooth to the Tx pin on the arduino
+#define Rx 15   //sets transmit pin on the bluetooth to the Rx pin on the arduino
+#define Tx 14  //sets recieve pin on the bluetooth to the Tx pin on the arduino
 
 SoftwareSerial bluetooth(Rx,Tx);
 int bluetoothData;
