@@ -1,4 +1,6 @@
 #include <SoftwareSerial.h>
+#include <LCD_I2C.h>
+LCD_I2C lcd(0x27, 16, 2);
 
 #define BLUETOOTH_BAUD_RATE 9600
 
