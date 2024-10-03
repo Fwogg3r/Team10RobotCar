@@ -1,65 +1,58 @@
-namespace Sprites_N
-{
-  class Sprite
+#include "WString.h"
+#include <stdint.h>
+#include <LiquidCrystal_I2C.h>
+
+#ifndef SPRITES_H
+#define SPRITES_H
+
+class Sprite {
+private:
+  bool leftArrowOn = true;
+  bool rightArrowOn = true;
+public:
+  /*static uint8_t leftArrowTopLeft[8];
+  static uint8_t leftArrowTopRight[8];
+  static uint8_t leftArrowBottomLeft[8];
+  static uint8_t leftArrowBottomRight[8];
+  static uint8_t leftArrowWhole[16];
+  static uint8_t rightArrowTopLeft[8];
+  static uint8_t rightArrowTopRight[8];
+  static uint8_t rightArrowBottomLeft[8];
+  static uint8_t rightArrowBottomRight[8];
+  static uint8_t rightArrowWhole[16];
+  */
+  static uint8_t leftArrow[8];
+  static uint8_t rightArrow[8];
+  static uint8_t teamTenSpriteLeft[8];
+  static uint8_t teamTenSpriteRight[8];
+  static uint8_t teamTenSprite[8];  //LCD Display is 8x5.. This sprite is 1 long by 2 wide.
+  Sprite();
+
+  void activateBlinker(char* light)
   {
-    private:
-    bool leftArrowOn = true;
-    bool rightArrowOn = true;
-    public:
-      Sprite();
-      Sprite(unsigned int pin);
-      byte leftArrow[14]
-      {
-        0b00000001,
-        0b00000011,
-        0b00000111,
-        0b00001111,
-        0b00011111,
-        0b00111111,
-        0b01111111,
-        0b11111111,
-        0b01111111,
-        0b00111111,
-        0b00011111,
-        0b00001111,
-        0b00000111,
-        0b00000011,
-        0b00000001
-      };
+    if(light == "Left")
+    {
 
-      byte rightArrow[14]
-      {
-        0b10000000,
-        0b11000000,
-        0b11100000,
-        0b11110000,
-        0b11111000,
-        0b11111100,
-        0b11111110,
-        0b11111111,
-        0b11111110,
-        0b11111100,
-        0b11111000,
-        0b11110000,
-        0b11100000,
-        0b11000000,
-        0b10000000
-      };
-
-      byte teamTenSprite[8]
-      {
-        0b11111111,
-        0b11000011,
-        0b10100101,
-        0b10011001,
-        0b10011001,
-        0b10100101,
-        0b11000011,
-        0b11111111,
-      };
-
-      void displaySpriteToLcd(byte sprite, unsigned int cursorStart, unsigned int cursorEnd);
-      void clearSpriteFromLcd(byte sprite, unsigned int cursorStart, unsigned int cursorEnd);
-      void toggleOnSprite(byte sprite);
+    }
   }
-}
+  /*void toggleOnSprite(byte sprite)
+      {
+        if(sprite == this->leftArrow)
+        {
+          this->leftArrowOn = !this->leftArrowOn;
+          if(this->leftArrowOn)
+          {
+          //display
+          }
+          else 
+          {
+            //clear that segment
+          }
+        }
+        else if(sprite == this->rightArrow)
+        {
+          thos->rightArrowOn = !rightArrowOn;
+        }
+      }*/
+};
+#endif
