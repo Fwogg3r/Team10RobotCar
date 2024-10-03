@@ -31,5 +31,10 @@ String readCommand() {
   return asciiData;
 }
 void loop() {
-  
+  if (bluetooth.available()>0)    //sends data only after recieved data
+  { incomingByte = bluetooth.read();    //reads the incoming byte(s)
+
+    bluetooth.print("check");       //confirmation that it was recieved
+    bluetooth.println(incomingByte, DEC);
+  }
 }
