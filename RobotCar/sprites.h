@@ -1,9 +1,19 @@
+/*
+Thomas Bryant
+9/30/2024
+sprites.h | The sprites header designed to hold the data for the various sprites related to the robot car LCD Screen.
+*/
 #include "WString.h"
 #include <stdint.h>
 #include <LiquidCrystal_I2C.h>
 
 #ifndef SPRITES_H
 #define SPRITES_H
+#if defined(ARDUINO) && ARDUINO >= 100
+#define printByte(args)  write(args);
+#else
+#define printByte(args)  print(args,BYTE);
+#endif
 
 class Sprite {
 private:
@@ -27,14 +37,9 @@ public:
   static uint8_t teamTenSpriteRight[8];
   static uint8_t teamTenSprite[8];  //LCD Display is 8x5.. This sprite is 1 long by 2 wide.
   Sprite();
-
-  void activateBlinker(char* light)
-  {
-    if(light == "Left")
-    {
-
-    }
-  }
+  static void initTeam10NameCredits(LiquidCrystal_I2C lcd);
+  static void initLCD(LiquidCrystal_I2C lcd);
+  static void activateBlinker(char* light, int LED, LiquidCrystal_I2C lcd);
   /*void toggleOnSprite(byte sprite)
       {
         if(sprite == this->leftArrow)

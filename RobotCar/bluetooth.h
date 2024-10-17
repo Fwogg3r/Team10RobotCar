@@ -1,6 +1,8 @@
 #include <SoftwareSerial.h>
-#include <LCD_I2C.h>
-LCD_I2C lcd(0x27, 16, 2);
+#include <LiquidCrystal_I2C.h>
+
+#ifndef BLUETOOTH_H
+#define BLUETOOTH_H
 
 #define BLUETOOTH_BAUD_RATE 38400
 
@@ -10,15 +12,24 @@ LCD_I2C lcd(0x27, 16, 2);
 SoftwareSerial bluetooth(Rx,Tx);
 int bluetoothData;
 
-void setup() {
+/*void setup() {
   pinMode(Rx, INPUT);     //sets Rx as an input
   pinMode(Tx, OUTPUT);    //sets Tx as an output
   bluetooth.begin(BLUETOOTH_BAUD_RATE);     //starts bluetooth communication
-}
-String readCommand() {
+}*/
+/*String readCommand()
+{
+  if (bluetooth.available()>0)    //sends data only after recieved data
+  { incomingByte = bluetooth.read();    //reads the incoming byte(s)
+
+    bluetooth.print("check");       //confirmation that it was recieved
+    bluetooth.println(incomingByte, DEC);
+  }
+}*/
+static String readCommand() {
   String asciiData = "";
   if (bluetooth.available()) {
-    lcd.clear();
+    //lcd.clear();
     while(bluetooth.available())
     {
       bluetoothData = bluetooth.read();     //reads the bluetooth data
@@ -30,11 +41,14 @@ String readCommand() {
   }
   return asciiData;
 }
-void loop() {
+
+/*void loop() 
+{
   if (bluetooth.available()>0)    //sends data only after recieved data
   { incomingByte = bluetooth.read();    //reads the incoming byte(s)
 
     bluetooth.print("check");       //confirmation that it was recieved
     bluetooth.println(incomingByte, DEC);
   }
-}
+}*/
+#endif
