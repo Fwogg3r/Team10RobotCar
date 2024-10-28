@@ -4,12 +4,6 @@
 #ifndef BLUETOOTH_H
 #define BLUETOOTH_H
 
-#define BLUETOOTH_BAUD_RATE 38400
-
-#define Rx 15  //sets transmit pin on the bluetooth to the Rx pin on the arduino
-#define Tx 14  //sets recieve pin on the bluetooth to the Tx pin on the arduino
-
-SoftwareSerial bluetooth(Rx,Tx);
 int bluetoothData;
 
 /*void setup() {
@@ -26,18 +20,25 @@ int bluetoothData;
     bluetooth.println(incomingByte, DEC);
   }
 }*/
-static String readCommand() {
+static String readCommand(SoftwareSerial &bluetooth, LiquidCrystal_I2C lcd) {
   String asciiData = "";
   if (bluetooth.available()) {
+    //lcd.print("Bluetooth DETECTED ON bluetooth.h...");
     //lcd.clear();
     while(bluetooth.available())
     {
+      lcd.print("Bluetooth Reading...");
       bluetoothData = bluetooth.read();     //reads the bluetooth data
       if( bluetoothData != 13 && bluetoothData != 10)   //ignores certain unwnated values
       {
         asciiData += (char)bluetoothData;
       }
     }
+  }
+  if(asciiData != "")
+  {
+    lcd.clear();
+    lcd.print(asciiData);
   }
   return asciiData;
 }

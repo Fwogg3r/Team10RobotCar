@@ -216,14 +216,29 @@ static void Sprite::initLCD(LiquidCrystal_I2C lcd) {
   lcd.printByte(1);
 }
 
-static void Sprite::activateBlinker(char* light, int LED, LiquidCrystal_I2C lcd)
+static void Sprite::blinkersOff(LiquidCrystal_I2C &lcd) 
 {
-  if (light == "Left") 
-  {
-    //TODO: Accept input, Execute blinking
-  }
-  if (light == "Right")
-  {
+  lcd.setCursor(7, 1);  //Bottom middle, team 10 logo
+  lcd.printByte(2);
+  lcd.printByte(3);
+}
 
-  }
+static void Sprite::blinkLeft(LiquidCrystal_I2C &lcd) 
+{
+  lcd.setCursor(0, 1);  //Left arrow
+  lcd.printByte(0);
+
+  lcd.setCursor(7, 1);  //Bottom middle, team 10 logo
+  lcd.printByte(2);
+  lcd.printByte(3);
+}
+
+static void Sprite::blinkRight(LiquidCrystal_I2C &lcd) 
+{
+  lcd.setCursor(7, 1);  //Bottom middle, team 10 logo
+  lcd.printByte(2);
+  lcd.printByte(3);
+
+  lcd.setCursor(15, 1);  //Bottom right, Right arrow
+  lcd.printByte(1);
 }
