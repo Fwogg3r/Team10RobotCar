@@ -85,33 +85,33 @@ void setup() {
   //Serial.println("Beginning serial on 9600.");
 }
 
-void loop() {
+//void loop() {
   // put your main code here, to run repeatedly:
   //scroll 14 characters then end...
-  checkScrollLCDTextForIntro();
-  if(bluetooth.available())
-  {
-    lcd.print("BLUETOOTH DETECTED ON INO");
-  }
-  String command = readCommand(bluetooth, lcd);
-  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
-  timeAtLastFrame = millis();
-  if(command == "Left")
-  {
-    Serial.println("Left Command Identified...");
-    if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = 500;
-      activateBlinker("Left", LED_GREEN, !blinkerOn);
-    }
-  }
-  else if(command == "Right")
-  {
-    Serial.println("Left Command Identified...");
-    if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = 500;
-      activateBlinker("Right", LED_RED, !blinkerOn);
-    }
-  }
-}
+//  checkScrollLCDTextForIntro();
+// if(bluetooth.available())
+//  {
+//    lcd.print("BLUETOOTH DETECTED ON INO");
+//  }
+//  String command = readCommand(bluetooth, lcd);
+//  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
+//  timeAtLastFrame = millis();
+//  if(command == "Left")
+//  {
+//    Serial.println("Left Command Identified...");
+//    if(timeUntilBlinkerChange <= 0)
+//    {
+//      timeUntilBlinkerChange = 500;
+//      activateBlinker("Left", LED_GREEN, !blinkerOn);
+//    }
+//  }
+//  else if(command == "Right")
+//  {
+//    Serial.println("Left Command Identified...");
+//   if(timeUntilBlinkerChange <= 0)
+//    {
+//      timeUntilBlinkerChange = 500;
+//      activateBlinker("Right", LED_RED, !blinkerOn);
+//    }
+//  }
+//}
