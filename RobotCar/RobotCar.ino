@@ -1,6 +1,7 @@
 #include <LiquidCrystal_I2C.h> //by Frank de Brabander
 //#include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
 #include "sprites.h"
+#include "motor.h"
 #include <SoftwareSerial.h>
 
 #define RGB_PIN 38
@@ -9,6 +10,7 @@
 #define Rx 15  //sets transmit pin on the bluetooth to the Rx pin on the arduino
 #define Tx 14  //sets recieve pin on the bluetooth to the Tx pin on the arduino
 #define BLUETOOTH_BAUD_RATE 38400
+#define interruptPin 2
 
 //Adafruit_NeoPixel pixels(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800); //The RGB LED on the MEGA
 LiquidCrystal_I2C lcd(0x27,20,2);
@@ -83,6 +85,11 @@ static void setAllBlinkersOff()
   activateBlinker("right", LED_GREEN, false);
 }
 
+static void increaseInterruptCounter()
+{
+  count++;
+}
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(38400);  // Monitor
@@ -96,6 +103,17 @@ void setup() {
   pinMode(LED_GREEN, OUTPUT);
   //bluetooth.begin(BLUETOOTH_BAUD_RATE);     //starts bluetooth communication
   //Serial.println("Beginning serial on 9600.");
+
+  pinMode(MotorPWM_A, OUTPUT);
+  pinMode(MotorPWM_B, OUTPUT);
+  pinMode(INA1A, OUTPUT);
+  pinMode(INA2A, OUTPUT);
+  pinMode(INA1B, OUTPUT);
+  pinMode(INA2B, OUTPUT);
+
+  pinMode(ENCODER, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), increaseInterruptCounter, FALLING);
+
 }
 
 void loop() {
@@ -158,4 +176,8 @@ void loop() {
       activateBlinker("right", LED_GREEN, rightBlinkerOn);
     }
   }
+
+  
+  Serial.print("RPM =");
+  Serial.println(RPM);
 }
