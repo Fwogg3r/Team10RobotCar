@@ -1,33 +1,30 @@
 #include <LiquidCrystal_I2C.h> //by Frank de Brabander
-#include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
+//#include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
 #include "sprites.h"
-#include "bluetooth.h"
 #include <SoftwareSerial.h>
-//using namespace SPRITES_H;
-//using namespace BLUETOOTH_H;
 
-#define NUMPIXELS 1
 #define RGB_PIN 38
 #define LED_RED 13
 #define LED_GREEN 12
-#define SCREEN_WIDTH
 #define Rx 15  //sets transmit pin on the bluetooth to the Rx pin on the arduino
 #define Tx 14  //sets recieve pin on the bluetooth to the Tx pin on the arduino
 #define BLUETOOTH_BAUD_RATE 38400
 
-Adafruit_NeoPixel pixels(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800); //The RGB LED on the MEGA
+//Adafruit_NeoPixel pixels(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800); //The RGB LED on the MEGA
 LiquidCrystal_I2C lcd(0x27,20,2);
 SoftwareSerial bluetooth(Rx,Tx);
 
 int charsScrolled = 0;
-bool initialize = true;
+bool initialize = true; //initialization values
+
 bool rightBlinkerActive = false; //if the blinker is set to execute logic in the loop.
 bool rightBlinkerOn = false; //if the LED voltage is set to HIGH.
 bool leftBlinkerActive = false;
 bool leftBlinkerOn = false;
-float BLINK_RATE = 250; //(in ms)
-float timeAtLastFrame = 0;
-float timeUntilBlinkerChange = 500;
+
+float BLINK_RATE = 250; // rate at which the blinker will turn on and off (in ms)
+float timeAtLastFrame = 0; //the recorded time at the last frame in ms (since initial loop first runtime)
+float timeUntilBlinkerChange = 500; //the time until the blinker is scheduled to change (once negative blinker values flip.)
 
 void checkScrollLCDTextForIntro()
 {
@@ -89,7 +86,7 @@ static void setAllBlinkersOff()
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(38400);  // Monitor
-  Serial1.begin(38400); // HC-05 
+  Serial1.begin(38400); // HC-05
   lcd.init();                      // initialize the lcd 
   lcd.backlight();
   Sprite::initTeam10NameCredits(lcd);
@@ -161,30 +158,4 @@ void loop() {
       activateBlinker("right", LED_GREEN, rightBlinkerOn);
     }
   }
-  /*if(bluetooth.available())
-  {
-    lcd.print("BLUETOOTH DETECTED ON INO");
-  }
-  String command = readCommand(bluetooth, lcd);
-  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
-  timeAtLastFrame = millis();
-  if(command == "Left")
-  {
-    Serial.println("Left Command Identified...");
-    if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = 500;
-      activateBlinker("Left", LED_GREEN, !blinkerOn);
-    }
-  }
-  else if(command == "Right")
-  {
-    Serial.println("Left Command Identified...");
-   if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = 500;
-      activateBlinker("Right", LED_RED, !blinkerOn);
-    }
-  }
-  */
 }
