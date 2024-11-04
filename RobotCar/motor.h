@@ -1,6 +1,10 @@
 #define MotorPWM_A 46 //left motor
 #define MotorPWM_B 44 //right motor
 
+//measure the width of the wheel
+//measure rotations for size of tape
+//pi * r^2
+
 #define INA1A 32
 #define INA2A 34
 #define INA1B 30

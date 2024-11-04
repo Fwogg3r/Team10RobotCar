@@ -216,15 +216,17 @@ static void Sprite::initLCD(LiquidCrystal_I2C lcd) {
   lcd.printByte(1);
 }
 
-static void Sprite::blinkersOff(LiquidCrystal_I2C &lcd) 
+static void Sprite::blinkersOff(LiquidCrystal_I2C lcd) 
 {
+  lcd.clear();
   lcd.setCursor(7, 1);  //Bottom middle, team 10 logo
   lcd.printByte(2);
   lcd.printByte(3);
 }
 
-static void Sprite::blinkLeft(LiquidCrystal_I2C &lcd) 
+static void Sprite::blinkRight(LiquidCrystal_I2C lcd) 
 {
+  lcd.clear();
   lcd.setCursor(0, 1);  //Left arrow
   lcd.printByte(0);
 
@@ -233,8 +235,9 @@ static void Sprite::blinkLeft(LiquidCrystal_I2C &lcd)
   lcd.printByte(3);
 }
 
-static void Sprite::blinkRight(LiquidCrystal_I2C &lcd) 
+static void Sprite::blinkLeft(LiquidCrystal_I2C lcd) 
 {
+  lcd.clear();
   lcd.setCursor(7, 1);  //Bottom middle, team 10 logo
   lcd.printByte(2);
   lcd.printByte(3);

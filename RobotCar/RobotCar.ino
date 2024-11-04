@@ -2,6 +2,7 @@
 #include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
 #include "sprites.h"
 #include "bluetooth.h"
+#include <SoftwareSerial.h>
 //using namespace SPRITES_H;
 //using namespace BLUETOOTH_H;
 
@@ -20,7 +21,11 @@ SoftwareSerial bluetooth(Rx,Tx);
 
 int charsScrolled = 0;
 bool initialize = true;
-bool blinkerOn = false;
+bool rightBlinkerActive = false; //if the blinker is set to execute logic in the loop.
+bool rightBlinkerOn = false; //if the LED voltage is set to HIGH.
+bool leftBlinkerActive = false;
+bool leftBlinkerOn = false;
+float BLINK_RATE = 250; //(in ms)
 float timeAtLastFrame = 0;
 float timeUntilBlinkerChange = 500;
 
@@ -43,7 +48,7 @@ void checkScrollLCDTextForIntro()
 
 static void activateBlinker(char* side, int LED, bool blinkerOn)
 {
-  if(side == "Left")
+  if(side == "left")
   {
     if(blinkerOn)
     {
@@ -56,7 +61,7 @@ static void activateBlinker(char* side, int LED, bool blinkerOn)
       Sprite::blinkersOff(lcd);
     }
   }
-  else if(side == "Right")
+  else if(side == "right")
   {
     if(blinkerOn)
     {
@@ -71,9 +76,20 @@ static void activateBlinker(char* side, int LED, bool blinkerOn)
   }
 }
 
+static void setAllBlinkersOff()
+{
+  leftBlinkerActive = false;
+  leftBlinkerOn = false;
+  rightBlinkerActive = false;
+  rightBlinkerOn = false;
+  activateBlinker("left", LED_RED, false);
+  activateBlinker("right", LED_GREEN, false);
+}
+
 void setup() {
   // put your setup code here, to run once:
-  //Serial.begin(9600);
+  Serial.begin(38400);  // Monitor
+  Serial1.begin(38400); // HC-05 
   lcd.init();                      // initialize the lcd 
   lcd.backlight();
   Sprite::initTeam10NameCredits(lcd);
@@ -81,37 +97,94 @@ void setup() {
   pinMode(Tx, OUTPUT);    //sets Tx as an output
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
-  bluetooth.begin(BLUETOOTH_BAUD_RATE);     //starts bluetooth communication
+  //bluetooth.begin(BLUETOOTH_BAUD_RATE);     //starts bluetooth communication
   //Serial.println("Beginning serial on 9600.");
 }
 
-//void loop() {
+void loop() {
   // put your main code here, to run repeatedly:
   //scroll 14 characters then end...
-//  checkScrollLCDTextForIntro();
-// if(bluetooth.available())
-//  {
-//    lcd.print("BLUETOOTH DETECTED ON INO");
-//  }
-//  String command = readCommand(bluetooth, lcd);
-//  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
-//  timeAtLastFrame = millis();
-//  if(command == "Left")
-//  {
-//    Serial.println("Left Command Identified...");
-//    if(timeUntilBlinkerChange <= 0)
-//    {
-//      timeUntilBlinkerChange = 500;
-//      activateBlinker("Left", LED_GREEN, !blinkerOn);
-//    }
-//  }
-//  else if(command == "Right")
-//  {
-//    Serial.println("Left Command Identified...");
-//   if(timeUntilBlinkerChange <= 0)
-//    {
-//      timeUntilBlinkerChange = 500;
-//      activateBlinker("Right", LED_RED, !blinkerOn);
-//    }
-//  }
-//}
+  checkScrollLCDTextForIntro();
+  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
+  timeAtLastFrame = millis();
+  /*Serial.print("Time until Blinker Change: ");
+  Serial.println(timeUntilBlinkerChange);
+  Serial.print("Time at last frame: ");
+  Serial.println(timeAtLastFrame);*/
+
+  if (Serial1.available()) {
+    String command = Serial1.readStringUntil('\n'); // Read command from HC-05 using serial 1 which is pins 18 and 19
+    command.trim(); // Remove any leading/trailing spaces, etc. This was an issue when I was sending the
+    //color codes. I made them "red, green, blue" on my phone and serial monitor would show they were
+    //received but not understood. I just changed these to right and left
+    
+    Serial.print("Received: ");
+    Serial.println(command);
+    
+    // Handle the received command
+    if (command.equalsIgnoreCase("right")) 
+    {
+      setAllBlinkersOff();
+      rightBlinkerActive = !rightBlinkerActive;
+    } 
+    else if (command.equalsIgnoreCase("left"))
+    {
+      setAllBlinkersOff();
+      leftBlinkerActive = !leftBlinkerActive;
+    }
+    else if(command.equalsIgnoreCase("off"))
+    {
+      setAllBlinkersOff();
+    }
+    else 
+    {
+      Serial.println("Unknown command"); // for when you push something that the board has no idea what it is
+    }
+  }
+
+  if(leftBlinkerActive)
+  {
+    if(timeUntilBlinkerChange <= 0)
+    {
+      timeUntilBlinkerChange = BLINK_RATE;
+      leftBlinkerOn = !leftBlinkerOn;
+      activateBlinker("left", LED_RED, leftBlinkerOn);
+    }
+  }
+
+  if(rightBlinkerActive)
+  {
+    if(timeUntilBlinkerChange <= 0)
+    {
+      timeUntilBlinkerChange = BLINK_RATE;
+      rightBlinkerOn = !rightBlinkerOn;
+      activateBlinker("right", LED_GREEN, rightBlinkerOn);
+    }
+  }
+  /*if(bluetooth.available())
+  {
+    lcd.print("BLUETOOTH DETECTED ON INO");
+  }
+  String command = readCommand(bluetooth, lcd);
+  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
+  timeAtLastFrame = millis();
+  if(command == "Left")
+  {
+    Serial.println("Left Command Identified...");
+    if(timeUntilBlinkerChange <= 0)
+    {
+      timeUntilBlinkerChange = 500;
+      activateBlinker("Left", LED_GREEN, !blinkerOn);
+    }
+  }
+  else if(command == "Right")
+  {
+    Serial.println("Left Command Identified...");
+   if(timeUntilBlinkerChange <= 0)
+    {
+      timeUntilBlinkerChange = 500;
+      activateBlinker("Right", LED_RED, !blinkerOn);
+    }
+  }
+  */
+}

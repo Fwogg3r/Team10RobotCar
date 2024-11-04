@@ -4,7 +4,23 @@
 #define LED_GREEN 12
 #define LED_RED 13
 
-void setup() {
+//This is just for testing below, we can change this whenever
+void turnOnLED(int ledPin) {
+ digitalWrite(ledPin, HIGH);  // Turn on the LED
+  delay(500);                 // Wait for .5 seconds
+  digitalWrite(ledPin, LOW);   // Turn off the LED
+ delay(500);                 // Wait for .5 seconds
+  digitalWrite(ledPin, HIGH);  // Turn on the LED
+  delay(500);                 // Wait for .5 seconds
+  digitalWrite(ledPin, LOW);   // Turn off the LED
+  delay(500);                 // Wait for .5 seconds
+  digitalWrite(ledPin, HIGH);  // Turn on the LED
+  delay(500);                 // Wait for .5 seconds
+  digitalWrite(ledPin, LOW);   // Turn off the LED
+  delay(500);                 // Wait for .5 seconds
+}
+
+/*void setup() {
   // Set up the LEDs as output
   pinMode(LED_GREEN, OUTPUT);
   pinMode(LED_RED, OUTPUT);
@@ -42,19 +58,4 @@ void loop() {
       Serial.println("Unknown command"); // for when you push something that the board has no idea what it is
     }
   }
-}
-//This is just for testing below, we can change this whenever
-void turnOnLED(int ledPin) {
- digitalWrite(ledPin, HIGH);  // Turn on the LED
-  delay(500);                 // Wait for .5 seconds
-  digitalWrite(ledPin, LOW);   // Turn off the LED
- delay(500);                 // Wait for .5 seconds
-  digitalWrite(ledPin, HIGH);  // Turn on the LED
-  delay(500);                 // Wait for .5 seconds
-  digitalWrite(ledPin, LOW);   // Turn off the LED
-  delay(500);                 // Wait for .5 seconds
-  digitalWrite(ledPin, HIGH);  // Turn on the LED
-  delay(500);                 // Wait for .5 seconds
-  digitalWrite(ledPin, LOW);   // Turn off the LED
-  delay(500);                 // Wait for .5 seconds
-}
+}*/
