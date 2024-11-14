@@ -1,4 +1,4 @@
-#include <LiquidCrystal_I2C.h> //by Frank de Brabander
+/*#include <LiquidCrystal_I2C.h> //by Frank de Brabander
 //#include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
 #include "sprites.h"
 #include "motor.h"
@@ -127,6 +127,7 @@ void loop() {
   Serial.print("Time at last frame: ");
   Serial.println(timeAtLastFrame);*/
 
+/*
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n'); // Read command from HC-05 using serial 1 which is pins 18 and 19
     command.trim(); // Remove any leading/trailing spaces, etc. This was an issue when I was sending the
@@ -181,3 +182,4 @@ void loop() {
   Serial.print("RPM =");
   Serial.println(RPM);
 }
+*/
