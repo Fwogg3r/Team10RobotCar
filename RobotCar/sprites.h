@@ -42,6 +42,7 @@ public:
   static void blinkersOff(LiquidCrystal_I2C lcd);
   static void blinkLeft(LiquidCrystal_I2C lcd);
   static void blinkRight(LiquidCrystal_I2C lcd);
+  static void hazard(LiquidCrystal_I2C lcd);
   //static void activateBlinker(char* side, int LED, LiquidCrystal_I2C &lcd, bool blinkerOn);
   /*void toggleOnSprite(byte sprite)
       {

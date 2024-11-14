@@ -63,6 +63,17 @@ static void activateBlinker(const char* side, int LED, bool blinkerOn) {
       Sprite::blinkersOff(lcd);
     }
   }
+  else if (strcmp(side, "hazard") == 0) {
+    if (blinkerOn) {
+      digitalWrite(LED_RED, HIGH);
+      digitalWrite(LED_GREEN, HIGH);
+      Sprite::hazard(lcd);
+    } else {
+      digitalWrite(LED_RED, LOW);
+      digitalWrite(LED_GREEN, LOW);
+      Sprite::blinkersOff(lcd);
+    }
+  }
 }
 
 static void setAllBlinkersOff() {
@@ -112,6 +123,8 @@ void setup() {
   pinMode(Tx, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
+  pinmode(encoderA, INPUT);
+  pinmode(encoderB, INPUT);
   pinMode(MotorPWM_A, OUTPUT);
   pinMode(MotorPWM_B, OUTPUT);
   pinMode(INA1A, OUTPUT);
