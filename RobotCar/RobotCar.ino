@@ -1,43 +1,43 @@
-/*#include <LiquidCrystal_I2C.h> //by Frank de Brabander
-//#include <Adafruit_NeoPixel.h> //Adafruit, 1.12.3
+#include <LiquidCrystal_I2C.h> // by Frank de Brabander
+//#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
-#include "motor.h"
 #include <SoftwareSerial.h>
 
-#define RGB_PIN 38
 #define LED_RED 13
 #define LED_GREEN 12
-#define Rx 15  //sets transmit pin on the bluetooth to the Rx pin on the arduino
-#define Tx 14  //sets recieve pin on the bluetooth to the Tx pin on the arduino
+#define Rx 19  // sets transmit pin on the Bluetooth to the Rx pin on the Arduino Mega
+#define Tx 18  // sets receive pin on the Bluetooth to the Tx pin on the Arduino Mega
 #define BLUETOOTH_BAUD_RATE 38400
-#define interruptPin 2
 
-//Adafruit_NeoPixel pixels(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800); //The RGB LED on the MEGA
-LiquidCrystal_I2C lcd(0x27,20,2);
-SoftwareSerial bluetooth(Rx,Tx);
+#define encoderA 2
+#define encoderB 3
+#define MotorPWM_A 5  // Left motor PWM pin
+#define MotorPWM_B 4  // Right motor PWM pin
+#define INA1A 32
+#define INA2A 34
+#define INA1B 30
+#define INA2B 36
+
+LiquidCrystal_I2C lcd(0x27, 20, 2);
+SoftwareSerial bluetooth(Rx, Tx);
 
 int charsScrolled = 0;
-bool initialize = true; //initialization values
+bool initialize = true;
 
-bool rightBlinkerActive = false; //if the blinker is set to execute logic in the loop.
-bool rightBlinkerOn = false; //if the LED voltage is set to HIGH.
+bool rightBlinkerActive = false;
+bool rightBlinkerOn = false;
 bool leftBlinkerActive = false;
 bool leftBlinkerOn = false;
 
-float BLINK_RATE = 250; // rate at which the blinker will turn on and off (in ms)
-float timeAtLastFrame = 0; //the recorded time at the last frame in ms (since initial loop first runtime)
-float timeUntilBlinkerChange = 500; //the time until the blinker is scheduled to change (once negative blinker values flip.)
+float BLINK_RATE = 250;           // rate at which the blinker will turn on and off (in ms)
+unsigned long timeAtLastFrame = 0;  // the recorded time at the last frame in ms
 
-void checkScrollLCDTextForIntro()
-{
-  if(charsScrolled < 14)
-  {
+void checkScrollLCDTextForIntro() {
+  if (charsScrolled < 14) {
     delay(500);
     lcd.scrollDisplayLeft();
     charsScrolled++;
-  }
-  else if(initialize)
-  {
+  } else if (initialize) {
     delay(2000);
     lcd.clear();
     Sprite::initLCD(lcd);
@@ -45,38 +45,27 @@ void checkScrollLCDTextForIntro()
   }
 }
 
-static void activateBlinker(char* side, int LED, bool blinkerOn)
-{
-  if(side == "left")
-  {
-    if(blinkerOn)
-    {
+static void activateBlinker(const char* side, int LED, bool blinkerOn) {
+  if (strcmp(side, "left") == 0) {
+    if (blinkerOn) {
       digitalWrite(LED, HIGH);
       Sprite::blinkLeft(lcd);
-    }
-    else
-    {
+    } else {
       digitalWrite(LED, LOW);
       Sprite::blinkersOff(lcd);
     }
-  }
-  else if(side == "right")
-  {
-    if(blinkerOn)
-    {
+  } else if (strcmp(side, "right") == 0) {
+    if (blinkerOn) {
       digitalWrite(LED, HIGH);
       Sprite::blinkRight(lcd);
-    }
-    else
-    {
+    } else {
       digitalWrite(LED, LOW);
       Sprite::blinkersOff(lcd);
     }
   }
 }
 
-static void setAllBlinkersOff()
-{
+static void setAllBlinkersOff() {
   leftBlinkerActive = false;
   leftBlinkerOn = false;
   rightBlinkerActive = false;
@@ -85,101 +74,94 @@ static void setAllBlinkersOff()
   activateBlinker("right", LED_GREEN, false);
 }
 
-static void increaseInterruptCounter()
-{
-  count++;
+// Motor control functions
+void Forward(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, HIGH);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, HIGH);
+  digitalWrite(INA2B, LOW);
+}
+
+void Reverse(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
+void Stop() {
+  analogWrite(MotorPWM_A, 0);
+  analogWrite(MotorPWM_B, 0);
 }
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(38400);  // Monitor
   Serial1.begin(38400); // HC-05
-  lcd.init();                      // initialize the lcd 
+  lcd.init();
   lcd.backlight();
   Sprite::initTeam10NameCredits(lcd);
-  pinMode(Rx, INPUT);     //sets Rx as an input
-  pinMode(Tx, OUTPUT);    //sets Tx as an output
+  pinMode(Rx, INPUT);
+  pinMode(Tx, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
-  //bluetooth.begin(BLUETOOTH_BAUD_RATE);     //starts bluetooth communication
-  //Serial.println("Beginning serial on 9600.");
-
   pinMode(MotorPWM_A, OUTPUT);
   pinMode(MotorPWM_B, OUTPUT);
   pinMode(INA1A, OUTPUT);
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
-
-  pinMode(ENCODER, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), increaseInterruptCounter, FALLING);
-
+  
+  timeAtLastFrame = millis();  // initialize time tracking
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //scroll 14 characters then end...
   checkScrollLCDTextForIntro();
-  timeUntilBlinkerChange -= millis() - timeAtLastFrame; //not very optimal - unfortunate!
-  timeAtLastFrame = millis();
-  /*Serial.print("Time until Blinker Change: ");
-  Serial.println(timeUntilBlinkerChange);
-  Serial.print("Time at last frame: ");
-  Serial.println(timeAtLastFrame);*/
 
-/*
+  unsigned long currentTime = millis();
+
   if (Serial1.available()) {
-    String command = Serial1.readStringUntil('\n'); // Read command from HC-05 using serial 1 which is pins 18 and 19
-    command.trim(); // Remove any leading/trailing spaces, etc. This was an issue when I was sending the
-    //color codes. I made them "red, green, blue" on my phone and serial monitor would show they were
-    //received but not understood. I just changed these to right and left
-    
+    String command = Serial1.readStringUntil('\n');
+    command.trim();
+
     Serial.print("Received: ");
     Serial.println(command);
     
-    // Handle the received command
-    if (command.equalsIgnoreCase("right")) 
-    {
+    if (command.equalsIgnoreCase("right")) {
       setAllBlinkersOff();
       rightBlinkerActive = !rightBlinkerActive;
-    } 
-    else if (command.equalsIgnoreCase("left"))
-    {
+    } else if (command.equalsIgnoreCase("left")) {
       setAllBlinkersOff();
       leftBlinkerActive = !leftBlinkerActive;
-    }
-    else if(command.equalsIgnoreCase("off"))
-    {
+    } else if (command.equalsIgnoreCase("off")) {
       setAllBlinkersOff();
-    }
-    else 
-    {
-      Serial.println("Unknown command"); // for when you push something that the board has no idea what it is
-    }
-  }
-
-  if(leftBlinkerActive)
-  {
-    if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = BLINK_RATE;
-      leftBlinkerOn = !leftBlinkerOn;
-      activateBlinker("left", LED_RED, leftBlinkerOn);
+    } else if (command.equalsIgnoreCase("forward")) {
+      Forward(150);  // Move forward at medium speed (150)
+    } else if (command.equalsIgnoreCase("reverse")) {
+      Reverse(150);  // Move backward at medium speed (150)
+    } else if (command.equalsIgnoreCase("stop")) {
+      Stop();  // Stop both motors
+    } else {
+      Serial.println("Unknown command");
     }
   }
 
-  if(rightBlinkerActive)
-  {
-    if(timeUntilBlinkerChange <= 0)
-    {
-      timeUntilBlinkerChange = BLINK_RATE;
-      rightBlinkerOn = !rightBlinkerOn;
-      activateBlinker("right", LED_GREEN, rightBlinkerOn);
-    }
+  if (leftBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
+    timeAtLastFrame = currentTime;
+    leftBlinkerOn = !leftBlinkerOn;
+    activateBlinker("left", LED_RED, leftBlinkerOn);
   }
 
-  
-  Serial.print("RPM =");
-  Serial.println(RPM);
+  if (rightBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
+    timeAtLastFrame = currentTime;
+    rightBlinkerOn = !rightBlinkerOn;
+    activateBlinker("right", LED_GREEN, rightBlinkerOn);
+  }
 }
-*/
