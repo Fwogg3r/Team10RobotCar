@@ -1,4 +1,4 @@
-#include <LiquidCrystal_I2C.h> // by Frank de Brabander
+/*#include <LiquidCrystal_I2C.h> // by Frank de Brabander
 //#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
 #include <SoftwareSerial.h>
@@ -164,4 +164,4 @@ void loop() {
     rightBlinkerOn = !rightBlinkerOn;
     activateBlinker("right", LED_GREEN, rightBlinkerOn);
   }
-}
+}*/

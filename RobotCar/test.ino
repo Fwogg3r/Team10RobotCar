@@ -18,6 +18,10 @@
 #define INA1B 30
 #define INA2B 36
 
+#define R_S A5
+#define M_S A6
+#define L_S A7 //7
+
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
 
@@ -85,19 +89,16 @@ static void setAllBlinkersOff() {
   activateBlinker("right", LED_GREEN, false);
 }
 
-// Motor control functions
-void Forward(int speed) {
-  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
-  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
-
-  digitalWrite(INA1A, HIGH);
-  digitalWrite(INA2A, LOW);
-
-  digitalWrite(INA1B, HIGH);
-  digitalWrite(INA2B, LOW);
+static void setAllBlinkersOn() {
+  //leftBlinkerActive = true;
+  leftBlinkerOn = true;
+  //rightBlinkerActive = true;
+  rightBlinkerOn = true;
+  activateBlinker("hazard", 0, true);
 }
 
-void Reverse(int speed) {
+// Motor control functions
+void Forward(int speed) {
   analogWrite(MotorPWM_A, speed);  // Sets left motor speed
   analogWrite(MotorPWM_B, speed);  // Sets right motor speed
 
@@ -106,6 +107,41 @@ void Reverse(int speed) {
 
   digitalWrite(INA1B, LOW);
   digitalWrite(INA2B, HIGH);
+}
+
+void Left(int speed)
+{
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, LOW);
+}
+
+void Right(int speed)
+{
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
+void Reverse(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, HIGH);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, HIGH);
+  digitalWrite(INA2B, LOW);
 }
 
 void Stop() {
@@ -123,14 +159,17 @@ void setup() {
   pinMode(Tx, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
-  pinmode(encoderA, INPUT);
-  pinmode(encoderB, INPUT);
+  pinMode(encoderA, INPUT);
+  pinMode(encoderB, INPUT);
   pinMode(MotorPWM_A, OUTPUT);
   pinMode(MotorPWM_B, OUTPUT);
   pinMode(INA1A, OUTPUT);
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
+  //pinMode(R_S, INPUT);
+  //pinMode(M_S, INPUT);
+  //pinMode(L_S, INPUT);
   
   timeAtLastFrame = millis();  // initialize time tracking
 }
@@ -140,6 +179,17 @@ void loop() {
 
   unsigned long currentTime = millis();
 
+  int leftSensorRead = analogRead(L_S);
+  int middleSensorRead = analogRead(M_S);
+  int rightSensorRead = analogRead(R_S);
+
+  Serial.print("LEFT: ");
+  Serial.println(leftSensorRead);
+  Serial.print("MIDDLE: ");
+  Serial.println(middleSensorRead);
+  Serial.print("RIGHT: ");
+  Serial.println(rightSensorRead);
+
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
     command.trim();
@@ -147,21 +197,37 @@ void loop() {
     Serial.print("Received: ");
     Serial.println(command);
     
-    if (command.equalsIgnoreCase("right")) {
+    if (command.equalsIgnoreCase("right")) 
+    {
       setAllBlinkersOff();
       rightBlinkerActive = !rightBlinkerActive;
-    } else if (command.equalsIgnoreCase("left")) {
+      Right(150);
+    } 
+    else if (command.equalsIgnoreCase("left")) 
+    {
       setAllBlinkersOff();
       leftBlinkerActive = !leftBlinkerActive;
-    } else if (command.equalsIgnoreCase("off")) {
+      Left(150);
+    } 
+    else if (command.equalsIgnoreCase("lights off")) 
+    {
       setAllBlinkersOff();
-    } else if (command.equalsIgnoreCase("forward")) {
+    }
+    else if (command.equalsIgnoreCase("forward")) 
+    {
       Forward(150);  // Move forward at medium speed (150)
-    } else if (command.equalsIgnoreCase("reverse")) {
+    } 
+    else if (command.equalsIgnoreCase("reverse")) 
+    {
       Reverse(150);  // Move backward at medium speed (150)
-    } else if (command.equalsIgnoreCase("stop")) {
+    }
+    else if (command.equalsIgnoreCase("stop")) 
+    {
       Stop();  // Stop both motors
-    } else {
+      setAllBlinkersOn();
+    } 
+    else 
+    {
       Serial.println("Unknown command");
     }
   }
