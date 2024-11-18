@@ -135,7 +135,7 @@ void setup() {
   pinMode(INA2B, OUTPUT);
   pinMode(ENCODERA, INPUT_PULLUP);
   pinMode(ENCODERB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCODERA),ISRA,FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENCODERA), ISRA, FALLING);
   attachInterrupt(digitalPinToInterrupt(ENCODERB), ISRB, FALLING);
 
   timeAtLastFrame = millis();  // initialize time tracking
