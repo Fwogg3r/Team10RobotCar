@@ -9,14 +9,20 @@
 #define Tx 18  // sets receive pin on the Bluetooth to the Tx pin on the Arduino Mega
 #define BLUETOOTH_BAUD_RATE 38400
 
-#define encoderA 2
-#define encoderB 3
+#define ENCODERA 2
+#define ENCODERB 3
 #define MotorPWM_A 5  // Left motor PWM pin
 #define MotorPWM_B 4  // Right motor PWM pin
 #define INA1A 32
 #define INA2A 34
 #define INA1B 30
 #define INA2B 36
+
+static volatile int16_t countA=0;
+static volatile int16_t countB=0;
+float rotation = 3.125;
+float RPMA = 0;
+float RPMB = 0;
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
@@ -75,6 +81,15 @@ static void setAllBlinkersOff() {
 }
 
 // Motor control functions
+
+void ISRA(){
+  countA++;
+}
+
+void ISRB(){
+  countB++;
+}
+
 void Forward(int speed) {
   analogWrite(MotorPWM_A, speed);  // Sets left motor speed
   analogWrite(MotorPWM_B, speed);  // Sets right motor speed
@@ -118,11 +133,25 @@ void setup() {
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
-  
+  pinMode(ENCODERA, INPUT_PULLUP);
+  pinMode(ENCODERB, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ENCODERA),ISRA,FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENCODERB), ISRB, FALLING);
+
   timeAtLastFrame = millis();  // initialize time tracking
 }
 
 void loop() {
+  countA = 0;
+  countB = 0;
+  delay(100);
+  RPMA = countA*rotation;
+  Serial.print("RPM = ");
+  Serial.println(RPMA);
+  RPMB = countB*rotation;
+  Serial.print("RPM = ");
+  Serial.println(RPMB);
+
   checkScrollLCDTextForIntro();
 
   unsigned long currentTime = millis();
