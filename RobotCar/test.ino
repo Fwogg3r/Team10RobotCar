@@ -90,12 +90,13 @@ static void setAllBlinkersOff() {
 }
 
 static void setAllBlinkersOn() {
-  //leftBlinkerActive = true;
-  leftBlinkerOn = true;
-  //rightBlinkerActive = true;
-  rightBlinkerOn = true;
-  activateBlinker("hazard", 0, true);
+  leftBlinkerActive = false;  // Disable blinking activity
+  rightBlinkerActive = false; // Disable blinking activity
+  leftBlinkerOn = true;       // Turn left blinker solid
+  rightBlinkerOn = true;      // Turn right blinker solid
+  activateBlinker("hazard", 0, true); // Activate both blinkers solid
 }
+
 
 // Motor control functions
 void Forward(int speed) {

@@ -1,4 +1,4 @@
-/*#include <LiquidCrystal_I2C.h> // by Frank de Brabander
+/* #include <LiquidCrystal_I2C.h> // by Frank de Brabander
 //#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
 #include <SoftwareSerial.h>
@@ -9,8 +9,8 @@
 #define Tx 18  // sets receive pin on the Bluetooth to the Tx pin on the Arduino Mega
 #define BLUETOOTH_BAUD_RATE 38400
 
-#define ENCODERA 2
-#define ENCODERB 3
+#define encoderA 2
+#define encoderB 3
 #define MotorPWM_A 5  // Left motor PWM pin
 #define MotorPWM_B 4  // Right motor PWM pin
 #define INA1A 32
@@ -18,11 +18,9 @@
 #define INA1B 30
 #define INA2B 36
 
-static volatile int16_t countA=0;
-static volatile int16_t countB=0;
-float rotation = 3.125;
-float RPMA = 0;
-float RPMB = 0;
+#define R_S A5
+#define M_S A6
+#define L_S A7 //7
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
@@ -69,6 +67,17 @@ static void activateBlinker(const char* side, int LED, bool blinkerOn) {
       Sprite::blinkersOff(lcd);
     }
   }
+  else if (strcmp(side, "hazard") == 0) {
+    if (blinkerOn) {
+      digitalWrite(LED_RED, HIGH);
+      digitalWrite(LED_GREEN, HIGH);
+      Sprite::hazard(lcd);
+    } else {
+      digitalWrite(LED_RED, LOW);
+      digitalWrite(LED_GREEN, LOW);
+      Sprite::blinkersOff(lcd);
+    }
+  }
 }
 
 static void setAllBlinkersOff() {
@@ -80,28 +89,16 @@ static void setAllBlinkersOff() {
   activateBlinker("right", LED_GREEN, false);
 }
 
+static void setAllBlinkersOn() {
+  //leftBlinkerActive = true;
+  leftBlinkerOn = true;
+  //rightBlinkerActive = true;
+  rightBlinkerOn = true;
+  activateBlinker("hazard", 0, true);
+}
+
 // Motor control functions
-
-void ISRA(){
-  countA++;
-}
-
-void ISRB(){
-  countB++;
-}
-
 void Forward(int speed) {
-  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
-  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
-
-  digitalWrite(INA1A, HIGH);
-  digitalWrite(INA2A, LOW);
-
-  digitalWrite(INA1B, HIGH);
-  digitalWrite(INA2B, LOW);
-}
-
-void Reverse(int speed) {
   analogWrite(MotorPWM_A, speed);  // Sets left motor speed
   analogWrite(MotorPWM_B, speed);  // Sets right motor speed
 
@@ -110,6 +107,41 @@ void Reverse(int speed) {
 
   digitalWrite(INA1B, LOW);
   digitalWrite(INA2B, HIGH);
+}
+
+void Left(int speed)
+{
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, LOW);
+}
+
+void Right(int speed)
+{
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
+void Reverse(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, HIGH);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, HIGH);
+  digitalWrite(INA2B, LOW);
 }
 
 void Stop() {
@@ -127,34 +159,36 @@ void setup() {
   pinMode(Tx, OUTPUT);
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
+  pinMode(encoderA, INPUT);
+  pinMode(encoderB, INPUT);
   pinMode(MotorPWM_A, OUTPUT);
   pinMode(MotorPWM_B, OUTPUT);
   pinMode(INA1A, OUTPUT);
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
-  pinMode(ENCODERA, INPUT_PULLUP);
-  pinMode(ENCODERB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCODERA), ISRA, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ENCODERB), ISRB, FALLING);
-
+  //pinMode(R_S, INPUT);
+  //pinMode(M_S, INPUT);
+  //pinMode(L_S, INPUT);
+  
   timeAtLastFrame = millis();  // initialize time tracking
 }
 
 void loop() {
-  countA = 0;
-  countB = 0;
-  delay(100);
-  RPMA = countA*rotation;
-  Serial.print("RPM = ");
-  Serial.println(RPMA);
-  RPMB = countB*rotation;
-  Serial.print("RPM = ");
-  Serial.println(RPMB);
-
   checkScrollLCDTextForIntro();
 
   unsigned long currentTime = millis();
+
+  int leftSensorRead = analogRead(L_S);
+  int middleSensorRead = analogRead(M_S);
+  int rightSensorRead = analogRead(R_S);
+
+  Serial.print("LEFT: ");
+  Serial.println(leftSensorRead);
+  Serial.print("MIDDLE: ");
+  Serial.println(middleSensorRead);
+  Serial.print("RIGHT: ");
+  Serial.println(rightSensorRead);
 
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
@@ -163,21 +197,37 @@ void loop() {
     Serial.print("Received: ");
     Serial.println(command);
     
-    if (command.equalsIgnoreCase("right")) {
+    if (command.equalsIgnoreCase("right")) 
+    {
       setAllBlinkersOff();
       rightBlinkerActive = !rightBlinkerActive;
-    } else if (command.equalsIgnoreCase("left")) {
+      Right(150);
+    } 
+    else if (command.equalsIgnoreCase("left")) 
+    {
       setAllBlinkersOff();
       leftBlinkerActive = !leftBlinkerActive;
-    } else if (command.equalsIgnoreCase("off")) {
+      Left(150);
+    } 
+    else if (command.equalsIgnoreCase("lights off")) 
+    {
       setAllBlinkersOff();
-    } else if (command.equalsIgnoreCase("forward")) {
+    }
+    else if (command.equalsIgnoreCase("forward")) 
+    {
       Forward(150);  // Move forward at medium speed (150)
-    } else if (command.equalsIgnoreCase("reverse")) {
+    } 
+    else if (command.equalsIgnoreCase("reverse")) 
+    {
       Reverse(150);  // Move backward at medium speed (150)
-    } else if (command.equalsIgnoreCase("stop")) {
+    }
+    else if (command.equalsIgnoreCase("stop")) 
+    {
       Stop();  // Stop both motors
-    } else {
+      setAllBlinkersOn();
+    } 
+    else 
+    {
       Serial.println("Unknown command");
     }
   }
@@ -193,4 +243,5 @@ void loop() {
     rightBlinkerOn = !rightBlinkerOn;
     activateBlinker("right", LED_GREEN, rightBlinkerOn);
   }
-}*/
+}
+*/
