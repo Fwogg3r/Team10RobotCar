@@ -18,9 +18,9 @@
 #define INA1B 30
 #define INA2B 36
 
-#define R_S A5
+#define R_S A7
 #define M_S A6
-#define L_S A7 //7
+#define L_S A5 //7
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
