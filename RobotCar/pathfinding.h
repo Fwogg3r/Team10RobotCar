@@ -1,8 +1,9 @@
-#include <LiquidCrystal_I2C.h> // by Frank de Brabander
+/*#include <LiquidCrystal_I2C.h> // by Frank de Brabander
 //#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
 #include <SoftwareSerial.h>
 
+<<<<<<< Updated upstream
 #define LED_RED 13
 #define LED_GREEN 12
 #define Rx 19  // sets transmit pin on the Bluetooth to the Rx pin on the Arduino Mega
@@ -252,3 +253,109 @@ void loop() {
     }
   }
 }
+=======
+// without obstacle avoidance 
+// https://github.com/Jeydori/Line-Follower-with-and-without-Obstacle-Avoidance-on-Specific-Track-?tab=readme-ov-file
+#define enA 3
+        #define in1 4 
+        #define in2 5 
+        #define in3 6  
+        #define in4 7 
+        #define enB 9 
+        
+        #define R_S A7
+        #define M_S A6
+        #define L_S A5 //7 
+        
+        void setup(){ 
+        pinMode(R_S, INPUT); 
+        pinMode(L_S, INPUT); 
+        
+        pinMode(enA, OUTPUT);  
+        pinMode(in1, OUTPUT); 
+        pinMode(in2, OUTPUT); 
+        pinMode(in3, OUTPUT);   
+        pinMode(in4, OUTPUT);  
+        pinMode(enB, OUTPUT); 
+        
+        //adjust depending on the IR sensor's response time and calibrate it properly
+        analogWrite(enA, 210); 
+        analogWrite(enB, 210); 
+        
+        delay(500);
+        }
+        
+        /*void loop(){
+        //if Right Sensor and Left Sensor are at White color then it will call forword function
+         if((digitalRead(R_S) == 0)&&(digitalRead(L_S) == 0)){
+         forward(); 
+         }
+        //if Right Sensor is Black and Left Sensor is White then it will call turn Right function
+        else if((digitalRead(R_S) == 1)&&(digitalRead(L_S) == 0)){
+         turnRight();
+         }
+        //if Right Sensor is White and Left Sensor is Black then it will call turn Left function
+        else if((digitalRead(R_S) == 0)&&(digitalRead(L_S) == 1)){
+         turnLeft();
+         } 
+        }*/
+/*
+        int detectPathViaLineSensor()
+        {
+          int status = 0;
+          int leftSensorRead = analogRead(L_S);
+          int middleSensorRead = analogRead(M_S);
+          int rightSensorRead = analogRead(R_S);
+
+          if(leftSensorRead <= 0.5)
+          {
+            status -= 1;
+          }
+
+          if(rightSensorRead <= 0.5)
+          {
+            status += 1;
+          }
+
+          if(middleSensorRead <= 0.5)
+          {
+            status = -1;
+          }
+          return status;
+        }
+        
+        void forward(){  //forword
+        digitalWrite(in1, LOW); 
+        digitalWrite(in2, HIGH); 
+        digitalWrite(in3, HIGH); 
+        digitalWrite(in4, LOW); 
+        }
+        
+        void backword(){ //backword
+        digitalWrite(in1, HIGH); 
+        digitalWrite(in2, LOW);  
+        digitalWrite(in3, LOW); 
+        digitalWrite(in4, HIGH); 
+        }
+        
+        void turnRight(){ //turnRight
+        digitalWrite(in1, HIGH); 
+        digitalWrite(in2, LOW); 
+        digitalWrite(in3, HIGH);  
+        digitalWrite(in4, LOW); 
+        }
+        
+        void turnLeft(){ //turnLeft
+        digitalWrite(in1, LOW);  
+        digitalWrite(in2, HIGH);  
+        digitalWrite(in3, LOW);
+        digitalWrite(in4, HIGH); 
+        }
+        
+        void Stop(){ //stop
+        digitalWrite(in1, LOW); 
+        digitalWrite(in2, LOW); 
+        digitalWrite(in3, LOW);  
+        digitalWrite(in4, LOW);
+        }
+>>>>>>> Stashed changes*/

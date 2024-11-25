@@ -135,7 +135,7 @@ void pathfinding() {
   int middleSensorRead = analogRead(M_S);  // Read middle sensor
   int rightSensorRead = analogRead(R_S);   // Read right sensor
 
-  const int lineThreshold = 52;  // Line detection threshold
+  const int lineThreshold = 70;  // Line detection threshold
   const int baseSpeed = 150;     // Base speed for motors
 
   if (middleSensorRead <= leftSensorRead && middleSensorRead <= rightSensorRead && middleSensorRead < lineThreshold) {
@@ -177,6 +177,14 @@ void setup() {
 
 void loop() {
   checkScrollLCDTextForIntro();
+
+  Serial.print(analogRead(L_S));
+  Serial.print("\n");
+  Serial.print(analogRead(M_S));
+  Serial.print("\n");
+  Serial.print(analogRead(R_S));
+  Serial.print("\n");
+  Serial.print("\n");
 
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
