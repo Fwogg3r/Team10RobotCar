@@ -20,7 +20,7 @@
 
 #define R_S A7
 #define M_S A6
-#define L_S A5 //7
+#define L_S A5
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
@@ -32,6 +32,7 @@ bool rightBlinkerActive = false;
 bool rightBlinkerOn = false;
 bool leftBlinkerActive = false;
 bool leftBlinkerOn = false;
+bool autoMode = false;
 
 float BLINK_RATE = 250;           // rate at which the blinker will turn on and off (in ms)
 unsigned long timeAtLastFrame = 0;  // the recorded time at the last frame in ms
@@ -67,17 +68,6 @@ static void activateBlinker(const char* side, int LED, bool blinkerOn) {
       Sprite::blinkersOff(lcd);
     }
   }
-  else if (strcmp(side, "hazard") == 0) {
-    if (blinkerOn) {
-      digitalWrite(LED_RED, HIGH);
-      digitalWrite(LED_GREEN, HIGH);
-      Sprite::hazard(lcd);
-    } else {
-      digitalWrite(LED_RED, LOW);
-      digitalWrite(LED_GREEN, LOW);
-      Sprite::blinkersOff(lcd);
-    }
-  }
 }
 
 static void setAllBlinkersOff() {
@@ -88,15 +78,6 @@ static void setAllBlinkersOff() {
   activateBlinker("left", LED_RED, false);
   activateBlinker("right", LED_GREEN, false);
 }
-
-static void setAllBlinkersOn() {
-  leftBlinkerActive = false;  // Disable blinking activity
-  rightBlinkerActive = false; // Disable blinking activity
-  leftBlinkerOn = true;       // Turn left blinker solid
-  rightBlinkerOn = true;      // Turn right blinker solid
-  activateBlinker("hazard", 0, true); // Activate both blinkers solid
-}
-
 
 // Motor control functions
 void Forward(int speed) {
@@ -110,25 +91,23 @@ void Forward(int speed) {
   digitalWrite(INA2B, HIGH);
 }
 
-void Left(int speed)
-{
-  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
-  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+void Left(int speed) {
+  analogWrite(MotorPWM_A, speed / 2);  // Slow left motor
+  analogWrite(MotorPWM_B, speed);      // Full speed on right motor
 
   digitalWrite(INA1A, LOW);
   digitalWrite(INA2A, HIGH);
 
   digitalWrite(INA1B, LOW);
-  digitalWrite(INA2B, LOW);
+  digitalWrite(INA2B, HIGH);
 }
 
-void Right(int speed)
-{
-  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
-  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+void Right(int speed) {
+  analogWrite(MotorPWM_A, speed);      // Full speed on left motor
+  analogWrite(MotorPWM_B, speed / 2);  // Slow right motor
 
   digitalWrite(INA1A, LOW);
-  digitalWrite(INA2A, LOW);
+  digitalWrite(INA2A, HIGH);
 
   digitalWrite(INA1B, LOW);
   digitalWrite(INA2B, HIGH);
@@ -150,46 +129,54 @@ void Stop() {
   analogWrite(MotorPWM_B, 0);
 }
 
+// Pathfinding logic
+void pathfinding() {
+  int leftSensorRead = analogRead(L_S);    // Read left sensor
+  int middleSensorRead = analogRead(M_S);  // Read middle sensor
+  int rightSensorRead = analogRead(R_S);   // Read right sensor
+
+  const int lineThreshold = 52;  // Line detection threshold
+  const int baseSpeed = 150;     // Base speed for motors
+
+  if (middleSensorRead <= leftSensorRead && middleSensorRead <= rightSensorRead && middleSensorRead < lineThreshold) {
+    // Middle sensor detects the line
+    Forward(baseSpeed);
+  } 
+  else if (leftSensorRead < middleSensorRead && leftSensorRead < rightSensorRead && leftSensorRead < lineThreshold) {
+    // Line is more on the left
+    Left(baseSpeed);
+  } 
+  else if (rightSensorRead < middleSensorRead && rightSensorRead < leftSensorRead && rightSensorRead < lineThreshold) {
+    // Line is more on the right
+    Right(baseSpeed);
+  } 
+  else {
+    // Stop if no clear line is detected
+    Stop();
+  }
+}
+
 void setup() {
   Serial.begin(38400);  // Monitor
   Serial1.begin(38400); // HC-05
   lcd.init();
   lcd.backlight();
   Sprite::initTeam10NameCredits(lcd);
-  pinMode(Rx, INPUT);
-  pinMode(Tx, OUTPUT);
+
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
-  pinMode(encoderA, INPUT);
-  pinMode(encoderB, INPUT);
   pinMode(MotorPWM_A, OUTPUT);
   pinMode(MotorPWM_B, OUTPUT);
   pinMode(INA1A, OUTPUT);
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
-  //pinMode(R_S, INPUT);
-  //pinMode(M_S, INPUT);
-  //pinMode(L_S, INPUT);
-  
+
   timeAtLastFrame = millis();  // initialize time tracking
 }
 
 void loop() {
   checkScrollLCDTextForIntro();
-
-  unsigned long currentTime = millis();
-
-  int leftSensorRead = analogRead(L_S);
-  int middleSensorRead = analogRead(M_S);
-  int rightSensorRead = analogRead(R_S);
-
-  Serial.print("LEFT: ");
-  Serial.println(leftSensorRead);
-  Serial.print("MIDDLE: ");
-  Serial.println(middleSensorRead);
-  Serial.print("RIGHT: ");
-  Serial.println(rightSensorRead);
 
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
@@ -197,51 +184,33 @@ void loop() {
 
     Serial.print("Received: ");
     Serial.println(command);
-    
-    if (command.equalsIgnoreCase("right")) 
-    {
-      setAllBlinkersOff();
-      rightBlinkerActive = !rightBlinkerActive;
-      Right(150);
+
+    if (command.equalsIgnoreCase("auto")) {
+      autoMode = true;  // Enable auto mode
     } 
-    else if (command.equalsIgnoreCase("left")) 
-    {
-      setAllBlinkersOff();
-      leftBlinkerActive = !leftBlinkerActive;
+    else if (command.equalsIgnoreCase("stop")) {
+      autoMode = false;  // Disable auto mode
+      Stop();
+    } 
+    else if (command.equalsIgnoreCase("forward")) {
+      autoMode = false;
+      Forward(150);
+    } 
+    else if (command.equalsIgnoreCase("reverse")) {
+      autoMode = false;
+      Reverse(150);
+    }
+    else if (command.equalsIgnoreCase("left")) {
+      autoMode = false;
       Left(150);
-    } 
-    else if (command.equalsIgnoreCase("lights off")) 
-    {
-      setAllBlinkersOff();
     }
-    else if (command.equalsIgnoreCase("forward")) 
-    {
-      Forward(150);  // Move forward at medium speed (150)
-    } 
-    else if (command.equalsIgnoreCase("reverse")) 
-    {
-      Reverse(150);  // Move backward at medium speed (150)
-    }
-    else if (command.equalsIgnoreCase("stop")) 
-    {
-      Stop();  // Stop both motors
-      setAllBlinkersOn();
-    } 
-    else 
-    {
-      Serial.println("Unknown command");
+    else if (command.equalsIgnoreCase("right")) {
+      autoMode = false;
+      Right(150);
     }
   }
 
-  if (leftBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
-    timeAtLastFrame = currentTime;
-    leftBlinkerOn = !leftBlinkerOn;
-    activateBlinker("left", LED_RED, leftBlinkerOn);
-  }
-
-  if (rightBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
-    timeAtLastFrame = currentTime;
-    rightBlinkerOn = !rightBlinkerOn;
-    activateBlinker("right", LED_GREEN, rightBlinkerOn);
+  if (autoMode) {
+    pathfinding();  // Run pathfinding logic if auto mode is enabled
   }
 }
