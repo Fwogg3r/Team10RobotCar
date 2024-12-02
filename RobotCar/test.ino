@@ -137,7 +137,7 @@ void pathfinding() {
 
   const int lowerThreshold = 950;
   const int upperThreshold = 1100;
-  const int baseSpeed = 180;          // Normal speed
+  const int baseSpeed = 130;          // Normal speed
 
   if (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold) {
     Forward(baseSpeed);
@@ -158,7 +158,7 @@ void pathfinding() {
 }
 
 void recovery() {
-  const int recoverySpeed = 100;      // Slower speed during recovery
+  const int recoverySpeed = 75;      // Slower speed during recovery
   int turnDuration = min(recoveryCounter * 150, 3000); // Increase duration, cap at 3s
 
   recoveryCounter++;  // Increment counter on each recovery attempt
