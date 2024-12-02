@@ -137,13 +137,11 @@ void pathfinding() {
 
   const int lowerThreshold = 950;
   const int upperThreshold = 1100;
-  const int baseSpeed = 125;          // Normal speed
-  const int recoverySpeed = 75;      // Slower speed during recovery
+  const int baseSpeed = 180;          // Normal speed
 
-  // Line detected, reset recovery counter
   if (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold) {
     Forward(baseSpeed);
-    recoveryCounter = 0;
+    recoveryCounter = 0;  // Reset recovery on successful line detection
   } 
   else if (leftSensorRead >= lowerThreshold && leftSensorRead <= upperThreshold) {
     Left(baseSpeed);
@@ -154,32 +152,38 @@ void pathfinding() {
     recoveryCounter = 0;
   } 
   else {
-    // Recovery mode: perform slower, stationary turns with increasing duration
-    recoveryCounter++;
-    int turnDuration = min(recoveryCounter * 150, 3000); // Increase duration, cap at 3s
-
-    // Alternate between left and right turns for better search coverage
-    if (recoveryCounter % 2 == 0) {
-      // Turn left in place slowly
-      digitalWrite(INA1A, HIGH);
-      digitalWrite(INA2A, LOW);
-      digitalWrite(INA1B, LOW);
-      digitalWrite(INA2B, HIGH);
-    } else {
-      // Turn right in place slowly
-      digitalWrite(INA1A, LOW);
-      digitalWrite(INA2A, HIGH);
-      digitalWrite(INA1B, HIGH);
-      digitalWrite(INA2B, LOW);
-    }
-
-    analogWrite(MotorPWM_A, recoverySpeed);  // Use slower speed
-    analogWrite(MotorPWM_B, recoverySpeed);
-
-    delay(turnDuration);  // Longer turns as it continuesly fails to detect the line
-    Stop();               // Brief stop between turns for stability
-    delay(200);
+    // Initiate recovery mode if no line is detected
+    recovery();
   }
+}
+
+void recovery() {
+  const int recoverySpeed = 100;      // Slower speed during recovery
+  int turnDuration = min(recoveryCounter * 150, 3000); // Increase duration, cap at 3s
+
+  recoveryCounter++;  // Increment counter on each recovery attempt
+
+  // Alternate between left and right turns for better search coverage
+  if (recoveryCounter % 2 == 0) {
+    // Turn left in place slowly
+    digitalWrite(INA1A, HIGH);
+    digitalWrite(INA2A, LOW);
+    digitalWrite(INA1B, LOW);
+    digitalWrite(INA2B, HIGH);
+  } else {
+    // Turn right in place slowly
+    digitalWrite(INA1A, LOW);
+    digitalWrite(INA2A, HIGH);
+    digitalWrite(INA1B, HIGH);
+    digitalWrite(INA2B, LOW);
+  }
+
+  analogWrite(MotorPWM_A, recoverySpeed);
+  analogWrite(MotorPWM_B, recoverySpeed);
+
+  delay(turnDuration);  // Perform recovery turn
+  Stop();               // Brief stop between turns for stability
+  delay(200);
 }
 
 
