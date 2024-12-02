@@ -1,5 +1,4 @@
 #include <LiquidCrystal_I2C.h> // by Frank de Brabander
-//#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
 #include <SoftwareSerial.h>
 
@@ -129,32 +128,61 @@ void Stop() {
   analogWrite(MotorPWM_B, 0);
 }
 
-// Pathfinding logic
+int recoveryCounter = 0;  // Tracks consecutive failed line detections
+
 void pathfinding() {
-  int leftSensorRead = analogRead(L_S);    // Read left sensor
-  int middleSensorRead = analogRead(M_S);  // Read middle sensor
-  int rightSensorRead = analogRead(R_S);   // Read right sensor
+  int leftSensorRead = analogRead(L_S);
+  int middleSensorRead = analogRead(M_S);
+  int rightSensorRead = analogRead(R_S);
 
-  const int lineThreshold = 70;  // Line detection threshold
-  const int baseSpeed = 150;     // Base speed for motors
+  const int lowerThreshold = 950;
+  const int upperThreshold = 1100;
+  const int baseSpeed = 125;          // Normal speed
+  const int recoverySpeed = 75;      // Slower speed during recovery
 
-  if (middleSensorRead <= leftSensorRead && middleSensorRead <= rightSensorRead && middleSensorRead < lineThreshold) {
-    // Middle sensor detects the line
+  // Line detected, reset recovery counter
+  if (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold) {
     Forward(baseSpeed);
+    recoveryCounter = 0;
   } 
-  else if (leftSensorRead < middleSensorRead && leftSensorRead < rightSensorRead && leftSensorRead < lineThreshold) {
-    // Line is more on the left
+  else if (leftSensorRead >= lowerThreshold && leftSensorRead <= upperThreshold) {
     Left(baseSpeed);
+    recoveryCounter = 0;
   } 
-  else if (rightSensorRead < middleSensorRead && rightSensorRead < leftSensorRead && rightSensorRead < lineThreshold) {
-    // Line is more on the right
+  else if (rightSensorRead >= lowerThreshold && rightSensorRead <= upperThreshold) {
     Right(baseSpeed);
+    recoveryCounter = 0;
   } 
   else {
-    // Stop if no clear line is detected
-    Stop();
+    // Recovery mode: perform slower, stationary turns with increasing duration
+    recoveryCounter++;
+    int turnDuration = min(recoveryCounter * 150, 3000); // Increase duration, cap at 3s
+
+    // Alternate between left and right turns for better search coverage
+    if (recoveryCounter % 2 == 0) {
+      // Turn left in place slowly
+      digitalWrite(INA1A, HIGH);
+      digitalWrite(INA2A, LOW);
+      digitalWrite(INA1B, LOW);
+      digitalWrite(INA2B, HIGH);
+    } else {
+      // Turn right in place slowly
+      digitalWrite(INA1A, LOW);
+      digitalWrite(INA2A, HIGH);
+      digitalWrite(INA1B, HIGH);
+      digitalWrite(INA2B, LOW);
+    }
+
+    analogWrite(MotorPWM_A, recoverySpeed);  // Use slower speed
+    analogWrite(MotorPWM_B, recoverySpeed);
+
+    delay(turnDuration);  // Longer turns as it continuesly fails to detect the line
+    Stop();               // Brief stop between turns for stability
+    delay(200);
   }
 }
+
+
 
 void setup() {
   Serial.begin(38400);  // Monitor
@@ -178,41 +206,39 @@ void setup() {
 void loop() {
   checkScrollLCDTextForIntro();
 
-  Serial.print(analogRead(L_S));
-  Serial.print("\n");
-  Serial.print(analogRead(M_S));
-  Serial.print("\n");
-  Serial.print(analogRead(R_S));
-  Serial.print("\n");
-  Serial.print("\n");
+  // Print sensor values to Serial Monitor
+  Serial.print("Left Sensor: ");
+  Serial.println(analogRead(L_S));
+  Serial.print("Middle Sensor: ");
+  Serial.println(analogRead(M_S));
+  Serial.print("Right Sensor: ");
+  Serial.println(analogRead(R_S));
+  Serial.println();
 
+  // Bluetooth communication monitoring
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
     command.trim();
 
+    // Print received command to the Serial Monitor
     Serial.print("Received: ");
     Serial.println(command);
 
     if (command.equalsIgnoreCase("auto")) {
       autoMode = true;  // Enable auto mode
-    } 
-    else if (command.equalsIgnoreCase("stop")) {
+    } else if (command.equalsIgnoreCase("stop")) {
       autoMode = false;  // Disable auto mode
       Stop();
-    } 
-    else if (command.equalsIgnoreCase("forward")) {
+    } else if (command.equalsIgnoreCase("forward")) {
       autoMode = false;
       Forward(150);
-    } 
-    else if (command.equalsIgnoreCase("reverse")) {
+    } else if (command.equalsIgnoreCase("reverse")) {
       autoMode = false;
       Reverse(150);
-    }
-    else if (command.equalsIgnoreCase("left")) {
+    } else if (command.equalsIgnoreCase("left")) {
       autoMode = false;
       Left(150);
-    }
-    else if (command.equalsIgnoreCase("right")) {
+    } else if (command.equalsIgnoreCase("right")) {
       autoMode = false;
       Right(150);
     }
