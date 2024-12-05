@@ -26,6 +26,7 @@ bool rightBlinkerOn = false;
 bool leftBlinkerActive = false;
 bool leftBlinkerOn = false;
 bool autoMode = false;
+bool remoteMode = false;
 
 float BLINK_RATE = 250;           // rate at which the blinker will turn on and off (in ms)
 unsigned long timeAtLastFrame = 0;  // the recorded time at the last frame in ms
@@ -129,14 +130,23 @@ void loop() {
 
     Serial.print("Received: ");
     Serial.println(command);
-    
-    if (command.equalsIgnoreCase("auto")) {
+
+    if(remoteMode)
+    {
+
+    }
+    else if (command.equalsIgnoreCase("auto")) {
       autoMode = true;  // Enable auto mode
-    } 
+    }
+    else if(command.equalsIgnoreCase("remote"))
+    {
+      remoteMode = true;
+    }
     else if (command.equalsIgnoreCase("stop")) {
       autoMode = false;  // Disable auto mode
+      //remoteMode = false;
       Motor::Stop();
-    } 
+    }
     else if (command.equalsIgnoreCase("forward")) {
       autoMode = false;
       Motor::Forward(150);

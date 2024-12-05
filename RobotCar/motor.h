@@ -1,4 +1,5 @@
 #include <string.h>
+#include <cmath>
 #define MotorPWM_A 46  //left motor
 #define MotorPWM_B 44  //right motor
 using namespace std;
@@ -17,10 +18,10 @@ float rotation = 3.125;
 #define INA2B 36
 #define R_S A7
 #define M_S A6
-#define L_S A5 //7
+#define L_S A5  //7
 
 class Motor {
-  public:
+public:
   static String DetermineMotorSpeeds(int countA, int countB) {
     RPMA = countA * rotation;
     RPMB = countB * rotation;
@@ -76,33 +77,91 @@ class Motor {
     analogWrite(MotorPWM_B, 0);
   }
 
-  static void pathfinding() 
+  static void Drive(int x, int y)
   {
-  int leftSensorRead = analogRead(L_S);    // Read left sensor
-  int middleSensorRead = analogRead(M_S);  // Read middle sensor
-  int rightSensorRead = analogRead(R_S);   // Read right sensor
-
-  const int lineThreshold = 70;  // Line detection threshold
-  const int baseSpeed = 150;     // Base speed for motors
-
-  if (middleSensorRead <= leftSensorRead && middleSensorRead <= rightSensorRead && middleSensorRead < lineThreshold) {
-    // Middle sensor detects the line
-    Forward(baseSpeed);
-  } 
-  else if (leftSensorRead < middleSensorRead && leftSensorRead < rightSensorRead && leftSensorRead < lineThreshold) 
-  {
-    // Line is more on the left
-    Left(baseSpeed);
-  } 
-  else if (rightSensorRead < middleSensorRead && rightSensorRead < leftSensorRead && rightSensorRead < lineThreshold) 
-  {
-    // Line is more on the right
-    Right(baseSpeed);
-  } 
-  else 
-  {
-    // Stop if no clear line is detected
-    Stop();
+    if(x > 0) //go right
+    {
+      if(y > 0)
+      {
+        analogWrite(MotorPWM_A, max((y - x), 0));  // Sets left motor speed
+      }
+      else
+      {
+        analogWrite(MotorPWM_A, min((y + x), 510));  // Sets left motor speed
+      }
+      analogWrite(MotorPWM_B, y);  // Sets right motor speed
+    }
+    else //go left
+    {
+      if(y > 0)
+      {
+        analogWrite(MotorPWM_A, max((y + x), 0));  // Sets left motor speed
+      }
+      else
+      {
+        analogWrite(MotorPWM_A, min((y - x), 510));  // Sets left motor speed
+      }
+      analogWrite(MotorPWM_B, y);  // Sets right motor speed
+    }
+    if(y > 0) //go forward
+    {
+      digitalWrite(INA1A, LOW);
+      digitalWrite(INA1B, LOW);
+      digitalWrite(INA2A, HIGH);
+      digitalWrite(INA2B, HIGH);
+    }
+    else //go backward
+    {
+      digitalWrite(INA1A, HIGH);
+      digitalWrite(INA1B, HIGH);
+      digitalWrite(INA2A, LOW);
+      digitalWrite(INA2B, LOW);
+    }
   }
-}
+
+  static void pathfinding() {
+    int leftSensorRead = analogRead(L_S);    // Read left sensor
+    int middleSensorRead = analogRead(M_S);  // Read middle sensor
+    int rightSensorRead = analogRead(R_S);   // Read right sensor
+
+    const int lineThreshold = 70;  // Line detection threshold
+    const int baseSpeed = 150;     // Base speed for motors
+
+    if (middleSensorRead <= leftSensorRead && middleSensorRead <= rightSensorRead && middleSensorRead < lineThreshold) {
+      // Middle sensor detects the line
+      Forward(baseSpeed);
+    } else if (leftSensorRead < middleSensorRead && leftSensorRead < rightSensorRead && leftSensorRead < lineThreshold) {
+      // Line is more on the left
+      Left(baseSpeed);
+    } else if (rightSensorRead < middleSensorRead && rightSensorRead < leftSensorRead && rightSensorRead < lineThreshold) {
+      // Line is more on the right
+      Right(baseSpeed);
+    } else {
+      // Stop if no clear line is detected
+      Stop();
+    }
+  }
+
+  void RemoteMode(string command) {
+    if (command.equalsIgnoreCase("remoteModeEnd")) {
+      remoteMode = false;
+    }
+    else
+    {
+      int x = 0;
+      int y = 0
+      if(command[0] == 'Y')
+      {
+        command = command.substr(1, command.length()); //TODO: get both at the same time from sender.
+        y = stoi(command);
+      }
+      if(command[0] == 'X')
+      {
+        command = command.substr(1, command.length());
+        x = stoi(command);
+      }
+
+      Drive(x, y);
+    }
+  }
 };
