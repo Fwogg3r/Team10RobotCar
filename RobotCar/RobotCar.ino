@@ -1,4 +1,4 @@
-/*
+
 #include <LiquidCrystal_I2C.h> // by Frank de Brabander
 #include "sprites.h"
 #include <SoftwareSerial.h>
@@ -24,8 +24,14 @@
 #define M_S A6
 #define L_S A5
 
-#define echo A0
-#define trigger A1
+
+//----------------------------------Servo-------------------------------
+#define echo A0       // Ultrasonic echo pin
+#define trigger A1    // Ultrasonic trigger pin
+#define servoPin 10    // Pin for controlling the servo
+Servo myServo;  // Create a servo object
+//----------------------------------------------------------------------
+
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
@@ -33,6 +39,7 @@ SoftwareSerial bluetooth(Rx, Tx);
 int charsScrolled = 0;
 bool initialize = true;
 
+//---------------------------------Blinker-Start-State----------------------------
 bool rightBlinkerActive = false;
 bool rightBlinkerOn = false;
 bool leftBlinkerActive = false;
@@ -258,4 +265,3 @@ void loop() {
     pathfinding();  // Run pathfinding logic if auto mode is enabled
   }
 }
-*/

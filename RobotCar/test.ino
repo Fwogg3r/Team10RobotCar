@@ -1,3 +1,4 @@
+/*
 #include <LiquidCrystal_I2C.h> // by Frank de Brabander
 #include "sprites.h"
 #include <SoftwareSerial.h>
@@ -264,3 +265,4 @@ void loop() {
     pathfinding();  // Run pathfinding logic if auto mode is enabled
   }
 }
+*/
