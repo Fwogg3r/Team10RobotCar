@@ -1,6 +1,9 @@
-#include <LiquidCrystal_I2C.h> // by Frank de Brabander
+/* #include <LiquidCrystal_I2C.h> // by Frank de Brabander
 #include "sprites.h"
 #include <SoftwareSerial.h>
+#include <Servo.h>  // Add the Servo library
+#include <protothreads.h> // by Ben Artin and Adam Dunkels
+
 
 #define LED_RED 13
 #define LED_GREEN 12
@@ -23,9 +26,11 @@
 
 #define echo A0       // Ultrasonic echo pin
 #define trigger A1    // Ultrasonic trigger pin
+#define servoPin 10    // Pin for controlling the servo
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
+Servo myServo;  // Create a servo object
 
 int charsScrolled = 0;
 bool initialize = true;
@@ -141,20 +146,53 @@ void pathfinding() {
   int middleSensorRead = analogRead(M_S);
   int rightSensorRead = analogRead(R_S);
 
-  const int lowerThreshold = 950;
-  const int upperThreshold = 1100;
-  const int baseSpeed = 130;  // Normal speed
+  // Debugging: Print sensor values
+  Serial.print("Left Sensor: ");
+  Serial.print(leftSensorRead);
+  Serial.print(" | Middle Sensor: ");
+  Serial.print(middleSensorRead);
+  Serial.print(" | Right Sensor: ");
+  Serial.println(rightSensorRead);
 
-  if (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold) {
+  const int lowerThreshold = 800;  // Adjust these thresholds for your track
+  const int upperThreshold = 1100;
+  const int baseSpeed = 70;  // Normal speed
+
+  // Adjustments based on how off-center the robot is
+  const int correctionFactor = 50;  // This will make the correction less aggressive
+
+  // Determine if we are on the line
+  bool leftOnLine = (leftSensorRead >= lowerThreshold && leftSensorRead <= upperThreshold);
+  bool middleOnLine = (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold);
+  bool rightOnLine = (rightSensorRead >= lowerThreshold && rightSensorRead <= upperThreshold);
+
+  // If the middle sensor detects the line, move forward
+  if (middleOnLine) {
     Forward(baseSpeed);
-  } else if (leftSensorRead >= lowerThreshold && leftSensorRead <= upperThreshold) {
-    Left(baseSpeed);
-  } else if (rightSensorRead >= lowerThreshold && rightSensorRead <= upperThreshold) {
-    Right(baseSpeed);
-  } else {
+  }
+  // If both left and right sensors detect the line, continue forward
+  else if (leftOnLine && rightOnLine) {
+    Forward(baseSpeed);  // No correction needed if both sensors detect the line
+  }
+  // If only the left sensor detects the line, turn right to correct
+  else if (leftOnLine) {
+    // Proportional turning: the further off-center, the stronger the correction
+    int turnSpeed = map(leftSensorRead, lowerThreshold, upperThreshold, 0, baseSpeed);
+    Right(turnSpeed + correctionFactor);  // Add correctionFactor to make adjustments less aggressive
+  }
+  // If only the right sensor detects the line, turn left to correct
+  else if (rightOnLine) {
+    int turnSpeed = map(rightSensorRead, lowerThreshold, upperThreshold, 0, baseSpeed);
+    Left(turnSpeed + correctionFactor);
+  }
+  // If no sensors detect the line, enter recovery mode
+  else {
     recovery();
   }
 }
+
+
+//--------------------------------Void Recovery-----------------------------------
 
 void recovery() {
   const int recoverySpeed = 75;
@@ -185,6 +223,7 @@ void recovery() {
 
 void setup() {
   Serial.begin(38400);  // Monitor
+  Serial.println("Serial Communication Started");
   Serial1.begin(38400); // HC-05
   lcd.init();
   lcd.backlight();
@@ -202,10 +241,39 @@ void setup() {
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
 
+  myServo.attach(servoPin); // Attach servo to pin
+
   timeAtLastFrame = millis();
 }
 
+unsigned long lastSensorReadTime = 0;  // Track the last sensor read time
+const unsigned long sensorReadInterval = 50;  // 50ms between sensor readings (20Hz)
+
 void loop() {
+  unsigned long currentMillis = millis();
+
+  // Only read the sensors if enough time has passed
+  if (currentMillis - lastSensorReadTime >= sensorReadInterval) {
+    lastSensorReadTime = currentMillis;  // Update the last read time
+
+    // Read the values from the line-following sensors
+    int leftSensorRead = analogRead(L_S);
+    int middleSensorRead = analogRead(M_S);
+    int rightSensorRead = analogRead(R_S);
+
+    // Print the sensor values to the Serial Monitor
+    Serial.print("Left Sensor: ");
+    Serial.print(leftSensorRead);
+    Serial.print("\tMiddle Sensor: ");
+    Serial.print(middleSensorRead);
+    Serial.print("\tRight Sensor: ");
+    Serial.println(rightSensorRead);
+
+    // Optionally, add a small delay for readability
+    // delay(500);  // Removed or adjusted to allow faster readings
+  }
+
+  // Call the function that handles the LCD intro screen
   checkScrollLCDTextForIntro();
 
   if (autoMode) {
@@ -244,3 +312,4 @@ void loop() {
     }
   }
 }
+*/

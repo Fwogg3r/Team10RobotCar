@@ -1,8 +1,9 @@
+/*
 #include <LiquidCrystal_I2C.h> // by Frank de Brabander
-//#include <Adafruit_NeoPixel.h> // Adafruit, 1.12.3
 #include "sprites.h"
 #include <SoftwareSerial.h>
-#include "motor.h"
+#include <Servo.h>  // Add the Servo library
+#include <protothreads.h> // by Ben Artin and Adam Dunkels
 
 #define LED_RED 13
 #define LED_GREEN 12
@@ -10,10 +11,21 @@
 #define Tx 18  // sets receive pin on the Bluetooth to the Tx pin on the Arduino Mega
 #define BLUETOOTH_BAUD_RATE 38400
 
-#define ENCODERA 2
-#define ENCODERB 3
-static int countA = 0;
-static int countB = 0;
+#define encoderA 2
+#define encoderB 3
+#define MotorPWM_A 5  // Left motor PWM pin
+#define MotorPWM_B 4  // Right motor PWM pin
+#define INA1A 32
+#define INA2A 34
+#define INA1B 30
+#define INA2B 36
+
+#define R_S A7
+#define M_S A6
+#define L_S A5
+
+#define echo A0
+#define trigger A1
 
 LiquidCrystal_I2C lcd(0x27, 20, 2);
 SoftwareSerial bluetooth(Rx, Tx);
@@ -72,28 +84,115 @@ static void setAllBlinkersOff() {
   activateBlinker("right", LED_GREEN, false);
 }
 
-// Motor counter functions tied to crucial interrupts
-void ISRA(){
-  countA++;
-}
-void ISRB(){
-  countB++;
+// Motor control functions
+void Forward(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
 }
 
-void BlinkerLogic()
-{
-    if (leftBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
-    timeAtLastFrame = currentTime;
-    leftBlinkerOn = !leftBlinkerOn;
-    activateBlinker("left", LED_RED, leftBlinkerOn);
-  }
+void Left(int speed) {
+  analogWrite(MotorPWM_A, speed / 2);  // Slow left motor
+  analogWrite(MotorPWM_B, speed);      // Full speed on right motor
 
-  if (rightBlinkerActive && currentTime - timeAtLastFrame >= BLINK_RATE) {
-    timeAtLastFrame = currentTime;
-    rightBlinkerOn = !rightBlinkerOn;
-    activateBlinker("right", LED_GREEN, rightBlinkerOn);
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
+void Right(int speed) {
+  analogWrite(MotorPWM_A, speed);      // Full speed on left motor
+  analogWrite(MotorPWM_B, speed / 2);  // Slow right motor
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
+void Reverse(int speed) {
+  analogWrite(MotorPWM_A, speed);  // Sets left motor speed
+  analogWrite(MotorPWM_B, speed);  // Sets right motor speed
+
+  digitalWrite(INA1A, HIGH);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, HIGH);
+  digitalWrite(INA2B, LOW);
+}
+
+void Stop() {
+  analogWrite(MotorPWM_A, 0);
+  analogWrite(MotorPWM_B, 0);
+}
+
+int recoveryCounter = 0;  // Tracks consecutive failed line detections
+
+void pathfinding() {
+  int leftSensorRead = analogRead(L_S);
+  int middleSensorRead = analogRead(M_S);
+  int rightSensorRead = analogRead(R_S);
+
+  const int lowerThreshold = 950;
+  const int upperThreshold = 1100;
+  const int baseSpeed = 130;          // Normal speed
+
+  if (middleSensorRead >= lowerThreshold && middleSensorRead <= upperThreshold) {
+    Forward(baseSpeed);
+    recoveryCounter = 0;  // Reset recovery on successful line detection
+  } 
+  else if (leftSensorRead >= lowerThreshold && leftSensorRead <= upperThreshold) {
+    Left(baseSpeed);
+    recoveryCounter = 0;
+  } 
+  else if (rightSensorRead >= lowerThreshold && rightSensorRead <= upperThreshold) {
+    Right(baseSpeed);
+    recoveryCounter = 0;
+  } 
+  else {
+    // Initiate recovery mode if no line is detected
+    recovery();
   }
 }
+
+void recovery() {
+  const int recoverySpeed = 75;      // Slower speed during recovery
+  int turnDuration = min(recoveryCounter * 150, 3000); // Increase duration, cap at 3s
+
+  recoveryCounter++;  // Increment counter on each recovery attempt
+
+  // Alternate between left and right turns for better search coverage
+  if (recoveryCounter % 2 == 0) {
+    // Turn left in place slowly
+    digitalWrite(INA1A, HIGH);
+    digitalWrite(INA2A, LOW);
+    digitalWrite(INA1B, LOW);
+    digitalWrite(INA2B, HIGH);
+  } else {
+    // Turn right in place slowly
+    digitalWrite(INA1A, LOW);
+    digitalWrite(INA2A, HIGH);
+    digitalWrite(INA1B, HIGH);
+    digitalWrite(INA2B, LOW);
+  }
+
+  analogWrite(MotorPWM_A, recoverySpeed);
+  analogWrite(MotorPWM_B, recoverySpeed);
+
+  delay(turnDuration);  // Perform recovery turn
+  Stop();               // Brief stop between turns for stability
+  delay(200);
+}
+
+
 
 void setup() {
   Serial.begin(38400);  // Monitor
@@ -101,8 +200,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
   Sprite::initTeam10NameCredits(lcd);
-  pinMode(Rx, INPUT);
-  pinMode(Tx, OUTPUT);
+
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
   pinMode(MotorPWM_A, OUTPUT);
@@ -111,54 +209,53 @@ void setup() {
   pinMode(INA2A, OUTPUT);
   pinMode(INA1B, OUTPUT);
   pinMode(INA2B, OUTPUT);
-  pinMode(ENCODERA, INPUT_PULLUP);
-  pinMode(ENCODERB, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENCODERA), ISRA, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ENCODERB), ISRB, FALLING);
+
   timeAtLastFrame = millis();  // initialize time tracking
 }
 
 void loop() {
   checkScrollLCDTextForIntro();
-  unsigned long currentTime = millis();
-  Serial.println(Motor::DetermineMotorSpeeds(&countA, &countB)); //Output motor information
 
-  if (Serial1.available()) { //Read BT
+  // Print sensor values to Serial Monitor
+  Serial.print("Left Sensor: ");
+  Serial.println(analogRead(L_S));
+  Serial.print("Middle Sensor: ");
+  Serial.println(analogRead(M_S));
+  Serial.print("Right Sensor: ");
+  Serial.println(analogRead(R_S));
+  Serial.println();
+
+  // Bluetooth communication monitoring
+  if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
     command.trim();
 
+    // Print received command to the Serial Monitor
     Serial.print("Received: ");
     Serial.println(command);
-    
+
     if (command.equalsIgnoreCase("auto")) {
       autoMode = true;  // Enable auto mode
-    } 
-    else if (command.equalsIgnoreCase("stop")) {
+    } else if (command.equalsIgnoreCase("stop")) {
       autoMode = false;  // Disable auto mode
-      Motor::Stop();
-    } 
-    else if (command.equalsIgnoreCase("forward")) {
+      Stop();
+    } else if (command.equalsIgnoreCase("forward")) {
       autoMode = false;
-      Motor::Forward(150);
-    } 
-    else if (command.equalsIgnoreCase("reverse")) {
+      Forward(150);
+    } else if (command.equalsIgnoreCase("reverse")) {
       autoMode = false;
-      Motor::Reverse(150);
-    }
-    else if (command.equalsIgnoreCase("left")) {
+      Reverse(150);
+    } else if (command.equalsIgnoreCase("left")) {
       autoMode = false;
-      Motor::Left(150);
-    }
-    else if (command.equalsIgnoreCase("right")) {
+      Left(150);
+    } else if (command.equalsIgnoreCase("right")) {
       autoMode = false;
-      Motor::Right(150);
+      Right(150);
     }
   }
-
-  BlinkerLogic();
 
   if (autoMode) {
-    //TODO: print out timing, led logic, etc.
-    Motor::pathfinding();  // Run pathfinding logic if auto mode is enabled
+    pathfinding();  // Run pathfinding logic if auto mode is enabled
   }
 }
+*/
