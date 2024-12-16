@@ -1,7 +1,7 @@
 
 #include <LiquidCrystal_I2C.h> // by Frank de Brabander
 #include "sprites.h"
-#include <SoftwareSerial.h>a
+#include <SoftwareSerial.h>
 #include <Servo.h>  // Add the Servo library
 #include <protothreads.h> // by Ben Artin and Adam Dunkels
 
@@ -143,25 +143,25 @@ void Stop() {
 
 void Square() {
   Forward(100);
-  delay(1000);
+  delay(900);
   Stop();
   Left(100);
   delay(100);
   Stop();
   Forward(100);
-  delay(1000);
+  delay(900);
   Stop();
   Left(100);
   delay(100);
   Stop();
   Forward(100);
-  delay(1000);
+  delay(900);
   Stop();
   Left(100);
   delay(100);
   Stop();
   Forward(100);
-  delay(1000);
+  delay(900);
   Stop();
   Left(100);
   delay(100);
@@ -290,7 +290,6 @@ void loop() {
       Square();
       }
     }
-  }
 
   if (autoMode) {
     pathfinding();  // Run pathfinding logic if auto mode is enabled
