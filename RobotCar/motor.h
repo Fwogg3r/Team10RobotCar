@@ -19,6 +19,13 @@ float rotation = 3.125;
 #define M_S A6
 #define L_S A5  //7
 
+//----------------------------------Servo-------------------------------
+#define echo A0       // Ultrasonic echo pin
+#define trigger A1    // Ultrasonic trigger pin
+#define servoPin 10    // Pin for controlling the servo
+Servo myServo;  // Create a servo object
+//----------------------------------------------------------------------
+
 class Motor {
 public:
   static String DetermineMotorSpeeds(int countA, int countB) {
@@ -115,7 +122,7 @@ public:
     }
     else //go left
     {
-      if(y > 0)
+      if(y > 0 && Ultrasonic_read() <= 20) //only go forward if ultrasonic pulse is < 20. ADDED SERVO HERE!
       {
         analogWrite(MotorPWM_A, max((y + x), 0));  // Sets left motor speed
       }
