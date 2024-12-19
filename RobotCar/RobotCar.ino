@@ -45,9 +45,25 @@ bool rightBlinkerOn = false;
 bool leftBlinkerActive = false;
 bool leftBlinkerOn = false;
 bool autoMode = false;
+bool motor_PWM_Mode = false;
 
 float BLINK_RATE = 250;           // rate at which the blinker will turn on and off (in ms)
 unsigned long timeAtLastFrame = 0;  // the recorded time at the last frame in ms
+
+int interruptA = 0;
+int interruptB = 0;
+
+static void increaseInterruptCounter(bool encoder) //1 = a, 0 = b
+{
+  if(encoder)
+  {
+    interruptA++;
+  }
+  else
+  {
+    interruptB++;
+  }
+}
 
 void checkScrollLCDTextForIntro() {
   if (charsScrolled < 14) {
@@ -218,6 +234,8 @@ void setup() {
   pinMode(INA2B, OUTPUT);
 
   timeAtLastFrame = millis();  // initialize time tracking
+  attachInterrupt(digitalPinToInterrupt(encoderA), increaseInterruptCounter(true), FALLING);
+  attachInterrupt(digitalPinToInterrupt(encoderB), increaseInterruptCounter(false), FALLING);
 }
 
 void loop() {
@@ -233,6 +251,10 @@ void loop() {
   Serial.println();
 
   // Bluetooth communication monitoring
+  if(motor_PWM_Mode)
+  {
+    Serial.println(DetermineMotorSpeeds(interruptA, interruptB));
+  }
   if (Serial1.available()) {
     String command = Serial1.readStringUntil('\n');
     command.trim();
@@ -258,6 +280,10 @@ void loop() {
     } else if (command.equalsIgnoreCase("right")) {
       autoMode = false;
       Right(150);
+    }
+    else if(command.equalsIgnoreCase("motorPWM"))
+    {
+      motor_PWM_Mode = true;
     }
   }
 
