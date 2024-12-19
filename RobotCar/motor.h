@@ -3,7 +3,8 @@
 #define MotorPWM_B 44  //right motor
 using namespace std;
 
-#define ENCODER 2
+#define encoderA 2
+#define encoderB 3
 static volatile int16_t count = 0;
 float RPMA = 0;
 float RPMB = 0;
@@ -157,4 +158,14 @@ public:
       Drive(x, y);
     }
   }
+
+  void ISRA()
+  {
+    countA++;
+  }
+  void ISRB()
+  {
+    countB++;
+  }
+  
   };
