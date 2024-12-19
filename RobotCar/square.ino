@@ -24,6 +24,8 @@
 #define M_S A6
 #define L_S A5
 
+#define button1
+#define button2
 
 //----------------------------------Servo-------------------------------
 #define echo A0       // Ultrasonic echo pin
@@ -103,6 +105,27 @@ void Forward(int speed) {
   digitalWrite(INA2B, HIGH);
 }
 
+void hardRight(int speed) {
+  analogWrite(MotorPWM_A, speed);     
+  analogWrite(MotorPWM_B, speed);  
+
+  digitalWrite(INA1A, LOW);
+  digitalWrite(INA2A, HIGH);
+
+  digitalWrite(INA1B, HIGH);
+  digitalWrite(INA2B, LOW);
+}
+void hardLeft(int speed) {
+  analogWrite(MotorPWM_A, speed);  
+  analogWrite(MotorPWM_B, speed);      
+
+  digitalWrite(INA1A, HIGH);
+  digitalWrite(INA2A, LOW);
+
+  digitalWrite(INA1B, LOW);
+  digitalWrite(INA2B, HIGH);
+}
+
 void Left(int speed) {
   analogWrite(MotorPWM_A, speed / 2);  // Slow left motor
   analogWrite(MotorPWM_B, speed);      // Full speed on right motor
@@ -142,29 +165,29 @@ void Stop() {
 }
 
 void Square() {
-  Forward(100);
-  delay(900);
+  Forward(150);
+  delay(2200);
   Stop();
-  Left(100);
-  delay(100);
+  hardRight(150);
+  delay(550);
   Stop();
-  Forward(100);
-  delay(900);
+  Forward(150);
+  delay(2200);
   Stop();
-  Left(100);
-  delay(100);
+  hardRight(150);
+  delay(550);
   Stop();
-  Forward(100);
-  delay(900);
+  Forward(150);
+  delay(2200);
   Stop();
-  Left(100);
-  delay(100);
+  hardRight(150);
+  delay(550);
   Stop();
-  Forward(100);
-  delay(900);
+  Forward(150);
+  delay(2200);
   Stop();
-  Left(100);
-  delay(100);
+  hardRight(150);
+  delay(550);
   Stop(); 
   }
  
